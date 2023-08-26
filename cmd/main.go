@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/pauloeduardods/auth-rest-api/internal/config"
+	"github.com/pauloeduardods/auth-rest-api/internal/routes"
 )
 
 var db = make(map[string]string)
@@ -15,6 +16,8 @@ func setupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
+
+	routes.SetupRoutes(r)
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
