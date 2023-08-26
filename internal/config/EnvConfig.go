@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"os"
 	"reflect"
 
 	"github.com/spf13/viper"
@@ -10,7 +11,11 @@ import (
 var EnvConfigs *envConfigs
 
 func init() {
-	EnvConfigs = loadEnvVariables()
+	if _, err := os.Stat(".env"); err == nil {
+		EnvConfigs = loadFromEnvFile()
+	} else {
+		EnvConfigs = loadEnvVariables()
+	}
 }
 
 type envConfigs struct {
@@ -21,6 +26,20 @@ type envConfigs struct {
 }
 
 func loadEnvVariables() *envConfigs {
+	viper.AutomaticEnv()
+
+	config := &envConfigs{
+		Port:              viper.GetInt("PORT"),
+		CognitoClientId:   viper.GetString("COGNITO_CLIENT_ID"),
+		CognitoUserPoolId: viper.GetString("COGNITO_USER_POOL_ID"),
+		CognitoRegion:     viper.GetString("COGNITO_REGION"),
+	}
+
+	validateEnvVariables(config)
+	return config
+}
+
+func loadFromEnvFile() *envConfigs {
 	viper.SetConfigFile(".env")
 
 	if err := viper.ReadInConfig(); err != nil {
