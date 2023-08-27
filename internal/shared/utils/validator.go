@@ -12,10 +12,10 @@ func init() {
 	validate = validator.New()
 }
 
-func Validate(s interface{}) *ApiError {
+func Validate(s interface{}) error {
 	err := validate.Struct(s)
 	if err != nil {
-		return NewApiError(400, "Invalid request body", err.Error())
+		return err
 	}
 	return nil
 }

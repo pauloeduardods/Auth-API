@@ -1,4 +1,4 @@
-package auth
+package service
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
@@ -25,12 +25,6 @@ type LoginInput struct {
 }
 
 func (l *LoginInput) Login() (*cognito.InitiateAuthOutput, error) {
-	err := utils.Validate(l)
-
-	if err != nil {
-		return nil, err
-	}
-
 	input := &cognito.InitiateAuthInput{
 		AuthFlow: aws.String(cognito.AuthFlowTypeUserPasswordAuth),
 		AuthParameters: map[string]*string{
