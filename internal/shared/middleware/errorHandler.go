@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/pauloeduardods/auth-rest-api/internal/config"
 	"github.com/pauloeduardods/auth-rest-api/internal/shared/logger"
 	"github.com/pauloeduardods/auth-rest-api/internal/shared/utils"
@@ -19,6 +20,16 @@ func ErrorHandler() gin.HandlerFunc {
 			case *utils.ApiError:
 				c.AbortWithStatusJSON(e.StatusCode, e)
 				c.Abort()
+			case validator.ValidationErrors:
+				errMsg := make(map[string]string)
+				for _, fieldErr := range e {
+					errMsg[fieldErr.Field()] = fieldErr.Tag()
+				}
+				c.AbortWithStatusJSON(http.StatusBadRequest, map[string]interface{}{
+					"message": "Validation Error",
+					"errors":  errMsg,
+				})
+				return
 			default:
 				logger.Error("Error", zap.Error(e))
 				if appEnv == "development" {
