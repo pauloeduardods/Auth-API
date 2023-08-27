@@ -1,0 +1,10 @@
+services:
+  cognito:
+    path: Services/Cognito
+
+  link-federated-user:
+    path: Lambdas/LinkFederatedUsers
+    dependsOn:
+      - cognito
+    params:
+      cognitoUserPoolId: ${cognito.UserPoolId}

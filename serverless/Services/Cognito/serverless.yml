@@ -1,0 +1,98 @@
+service: cognito-user-pool
+frameworkVersion: "3"
+
+custom:
+  region: us-east-1
+
+provider:
+  deploymentMethod: direct
+  name: aws
+  region: ${self:custom.region}
+
+resources:
+  Resources:
+    UserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: cognito-user-pool
+        Schema:
+          - Name: email
+            Required: true
+            Mutable: true
+          - Name: name
+            Required: true
+            Mutable: true
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes: [email]
+        VerificationMessageTemplate:
+          DefaultEmailOption: CONFIRM_WITH_LINK
+          EmailSubject: Confirm your email
+          EmailMessage: Please click the link below to verify your email address. {####}
+        AccountRecoverySetting:
+          RecoveryMechanisms:
+            - Name: verified_email
+              Priority: 1
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireNumbers: true
+            RequireLowercase: true
+            RequireSymbols: true
+            RequireUppercase: true
+            TemporaryPasswordValidityDays: 7
+        LambdaConfig:
+          PreSignUp: arn:aws:lambda:${self:custom.region}:${aws:accountId}:function:${sls:stage}-PreSignUp-LinkFederatedUser
+        UserPoolTags:
+          Name: cognito-user-pool
+          Env: ${sls:stage}
+
+    UserClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: user-pool-client
+        GenerateSecret: false
+        UserPoolId: { Ref: UserPool }
+        PreventUserExistenceErrors: ENABLED
+        TokenValidityUnits:
+          AccessToken: minutes
+          IdToken: minutes
+          RefreshToken: days
+        AccessTokenValidity: 30
+        IdTokenValidity: 30
+        RefreshTokenValidity: 10
+        AllowedOAuthFlows:
+          - code
+        ExplicitAuthFlows:
+          - ALLOW_CUSTOM_AUTH
+          - ALLOW_USER_PASSWORD_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+          - ALLOW_ADMIN_USER_PASSWORD_AUTH
+          - ALLOW_USER_SRP_AUTH
+        AllowedOAuthScopes:
+          - aws.cognito.signin.user.admin
+          - email
+          - openid
+          - phone
+          - profile
+        CallbackURLs:
+          - http://localhost:3000
+        LogoutURLs:
+          - http://localhost:3000
+
+    UserCognitoDomain:
+      Type: AWS::Cognito::UserPoolDomain
+      Properties:
+        Domain: ${sls:stage}-user-pool-pauloedsg
+        UserPoolId: { Ref: UserPool }
+
+  Outputs:
+    UserPoolId:
+      Value:
+        Fn::Select:
+          - 1
+          - Fn::Split:
+              - "/"
+              - Fn::GetAtt:
+                  - UserPool
+                  - ProviderName
