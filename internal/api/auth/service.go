@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	cognito "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/pauloeduardods/auth-rest-api/internal/config"
+	"github.com/pauloeduardods/auth-rest-api/internal/utils"
 )
 
 var (
@@ -19,11 +20,17 @@ func init() {
 }
 
 type Login struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Username string `json:"username" binding:"required" validate:"email"`
+	Password string `json:"password" binding:"required" validate:"min=8"`
 }
 
 func (l *Login) Login() (*cognito.InitiateAuthOutput, error) {
+	err := utils.Validate(l)
+
+	if err != nil {
+		return nil, err
+	}
+
 	input := &cognito.InitiateAuthInput{
 		AuthFlow: aws.String(cognito.AuthFlowTypeUserPasswordAuth),
 		AuthParameters: map[string]*string{
