@@ -1,0 +1,43 @@
+service: LinkFederatedUser
+frameworkVersion: "3"
+
+custom:
+  region: us-east-1
+
+provider:
+  deploymentMethod: direct
+  name: aws
+  runtime: go1.x
+  region: ${self:custom.region}
+  architecture: x86_64
+  memorySize: 128
+  timeout: 10
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminGetUser
+            - cognito-idp:AdminLinkProviderForUser
+            - cognito-idp:AdminCreateUser
+          Resource: arn:aws:cognito-idp:${self:custom.region}:${aws:accountId}:userpool/${param:cognitoUserPoolId}
+
+package:
+  excludeDevDependencies: true
+  patterns:
+    - "!/"
+    - "bin/"
+
+functions:
+  preSignUp:
+    name: ${sls:stage}-PreSignUp-LinkFederatedUser
+    description: Link federated user to Cognito user, if Cognito user does not exist, create it and link
+    handler: bin/link-federated-user
+    environment:
+      COGNITO_USER_POOL_ID: ${param:cognitoUserPoolId}
+      COGNITO_REGION: ${self:custom.region}
+    events:
+      - cognitoUserPool:
+          pool: cognito-user-pool
+          trigger: PreSignUp
+          existing: true
