@@ -5,7 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	cognito "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/pauloeduardods/auth-rest-api/internal/config"
-	"github.com/pauloeduardods/auth-rest-api/internal/utils"
+	"github.com/pauloeduardods/auth-rest-api/internal/shared/utils"
 )
 
 var (
@@ -19,12 +19,12 @@ func init() {
 	cognitoClient = cognito.New(sess)
 }
 
-type Login struct {
+type LoginInput struct {
 	Username string `json:"username" binding:"required" validate:"email"`
 	Password string `json:"password" binding:"required" validate:"min=8"`
 }
 
-func (l *Login) Login() (*cognito.InitiateAuthOutput, error) {
+func (l *LoginInput) Login() (*cognito.InitiateAuthOutput, error) {
 	err := utils.Validate(l)
 
 	if err != nil {
@@ -42,11 +42,21 @@ func (l *Login) Login() (*cognito.InitiateAuthOutput, error) {
 	return cognitoClient.InitiateAuth(input)
 }
 
-func SignUp(username, password string) (*cognito.SignUpOutput, error) {
+type SignUpInput struct {
+	Username string `json:"username" binding:"required" validate:"email"`
+	Password string `json:"password" binding:"required" validate:"min=8"`
+}
+
+func (s *SignUpInput) SignUp() (*cognito.SignUpOutput, error) {
+	err := utils.Validate(s)
+
+	if err != nil {
+		return nil, err
+	}
 	input := &cognito.SignUpInput{
 		ClientId: aws.String(config.EnvConfigs.CognitoClientId),
-		Username: aws.String(username),
-		Password: aws.String(password),
+		Username: aws.String(s.Username),
+		Password: aws.String(s.Password),
 	}
 	return cognitoClient.SignUp(input)
 }
