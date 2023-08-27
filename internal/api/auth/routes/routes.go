@@ -5,7 +5,7 @@ import (
 	"github.com/pauloeduardods/auth-rest-api/internal/api/auth/controllers"
 )
 
-func SetupAuthRoutes(r *gin.Engine) {
+func SetupRoutes(r *gin.Engine) {
 	authGroup := r.Group("/auth")
 	authGroup.POST("/login", controllers.Login)
 }

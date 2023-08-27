@@ -23,6 +23,7 @@ type envConfigs struct {
 	CognitoClientId   string `mapstructure:"COGNITO_CLIENT_ID"`
 	CognitoUserPoolId string `mapstructure:"COGNITO_USER_POOL_ID"`
 	CognitoRegion     string `mapstructure:"COGNITO_REGION"`
+	AppEnv            string `mapstructure:"APP_ENV"`
 }
 
 func loadEnvVariables() *envConfigs {
@@ -33,6 +34,7 @@ func loadEnvVariables() *envConfigs {
 		CognitoClientId:   viper.GetString("COGNITO_CLIENT_ID"),
 		CognitoUserPoolId: viper.GetString("COGNITO_USER_POOL_ID"),
 		CognitoRegion:     viper.GetString("COGNITO_REGION"),
+		AppEnv:            viper.GetString("APP_ENV"),
 	}
 
 	validateEnvVariables(config)
