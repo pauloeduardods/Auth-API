@@ -8,6 +8,7 @@ import (
 	"github.com/pauloeduardods/auth-rest-api/internal/config"
 	"github.com/pauloeduardods/auth-rest-api/internal/routes"
 	"github.com/pauloeduardods/auth-rest-api/internal/shared/middleware"
+	"github.com/pauloeduardods/auth-rest-api/static"
 )
 
 var (
@@ -27,6 +28,7 @@ func init() {
 	r.Use(middleware.ErrorHandler())
 	r.Use(gin.Recovery())
 	routes.SetupRoutes(r)
+	static.SetupStaticFiles(r)
 }
 
 func main() {
