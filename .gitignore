@@ -22,3 +22,6 @@ go.work
 .serverless
 
 node_modules/
+
+# Binaries for programs and plugins
+app/bin
