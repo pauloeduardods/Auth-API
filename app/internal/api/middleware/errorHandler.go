@@ -3,16 +3,15 @@ package middleware
 import (
 	"net/http"
 
+	"auth-api-cognito/internal/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/pauloeduardods/auth-rest-api/internal/config"
-	"github.com/pauloeduardods/auth-rest-api/internal/shared/logger"
-	"github.com/pauloeduardods/auth-rest-api/internal/shared/utils"
+	"github.com/maragudk/env"
 	"go.uber.org/zap"
 )
 
-func ErrorHandler() gin.HandlerFunc {
-	appEnv := config.EnvConfigs.AppEnv
+func ErrorHandler(log *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 		for _, err := range c.Errors {
@@ -31,7 +30,8 @@ func ErrorHandler() gin.HandlerFunc {
 				})
 				return
 			default:
-				logger.Error("Error", zap.Error(e))
+				appEnv := env.GetStringOrDefault("APP_ENV", "development")
+				log.Error("Error", zap.Error(e))
 				if appEnv == "development" {
 					c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"message": e.Error()})
 					return

@@ -1,4 +1,4 @@
-package cognito_jwt_verify
+package cognitoJwtVerify
 
 import (
 	"crypto/rsa"
@@ -7,12 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"math/big"
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/pauloeduardods/auth-rest-api/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -21,11 +19,13 @@ type Auth struct {
 	jwkURL            string
 	cognitoRegion     string
 	cognitoUserPoolID string
+	log               *zap.Logger
 }
 
 type Config struct {
 	CognitoRegion     string
 	CognitoUserPoolID string
+	Log               *zap.Logger
 }
 
 type JWK struct {
@@ -42,13 +42,10 @@ func NewAuth(config *Config) *Auth {
 	a := &Auth{
 		cognitoRegion:     config.CognitoRegion,
 		cognitoUserPoolID: config.CognitoUserPoolID,
+		log:               config.Log,
 	}
 
 	a.jwkURL = fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", a.cognitoRegion, a.cognitoUserPoolID)
-	err := a.CacheJWK()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	return a
 }
@@ -56,6 +53,7 @@ func NewAuth(config *Config) *Auth {
 func (a *Auth) CacheJWK() error {
 	req, err := http.NewRequest("GET", a.jwkURL, nil)
 	if err != nil {
+		a.log.Error("Error creating JWK request", zap.Error(err))
 		return err
 	}
 
@@ -63,23 +61,25 @@ func (a *Auth) CacheJWK() error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		a.log.Error("Error getting JWK", zap.Error(err))
 		return err
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		a.log.Error("Error reading JWK response body", zap.Error(err))
 		return err
 	}
 
 	jwk := new(JWK)
 	err = json.Unmarshal(body, jwk)
 	if err != nil {
+		a.log.Error("Error unmarshalling JWK", zap.Error(err))
 		return err
 	}
 
 	a.jwk = jwk
-	logger.Info("JWK", zap.Any("jwk", a.jwk))
 	return nil
 }
 
@@ -89,6 +89,7 @@ func (a *Auth) ParseJWT(tokenString string) (*jwt.Token, error) {
 		return key, nil
 	})
 	if err != nil {
+		a.log.Error("Error parsing JWT", zap.Error(err))
 		return token, err
 	}
 

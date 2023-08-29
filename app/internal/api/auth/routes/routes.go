@@ -1,11 +1,14 @@
-package routes
+package authRoutes
 
 import (
+	"auth-api-cognito/internal/api/auth/controllers"
+	cognito "auth-api-cognito/internal/auth"
+	validatorUtil "auth-api-cognito/internal/utils/validator"
+
 	"github.com/gin-gonic/gin"
-	"github.com/pauloeduardods/auth-rest-api/internal/api/auth/controllers"
 )
 
-func SetupRoutes(r *gin.Engine) {
+func SetupRoutes(r *gin.Engine, v *validatorUtil.Validator, c *cognito.Cognito) {
 	authGroup := r.Group("/auth")
-	authGroup.POST("/login", controllers.Login)
+	authGroup.POST("/login", controllers.Login(v, c))
 }

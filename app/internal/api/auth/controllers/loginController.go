@@ -3,30 +3,32 @@ package controllers
 import (
 	"net/http"
 
+	cognito "auth-api-cognito/internal/auth"
+	validatorUtil "auth-api-cognito/internal/utils/validator"
+
 	"github.com/gin-gonic/gin"
-	"github.com/pauloeduardods/auth-rest-api/internal/api/auth/service"
-	"github.com/pauloeduardods/auth-rest-api/internal/shared/utils"
 )
 
-func Login(c *gin.Context) {
-	var login service.LoginInput
+func Login(v *validatorUtil.Validator, c *cognito.Cognito) gin.HandlerFunc {
+	return func(g *gin.Context) {
+		var login cognito.LoginInput
+		if err := g.ShouldBindJSON(&login); err != nil {
+			g.Error(err)
+			return
+		}
 
-	if err := c.ShouldBindJSON(&login); err != nil {
-		c.Error(err)
-		return
-	}
+		err := v.Validate(&login)
+		if err != nil {
+			g.Error(err)
+			return
+		}
 
-	err := utils.Validate(&login)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	res, err := login.Login()
-	if err != nil {
-		c.Error(err)
-		return
-	} else {
-		c.JSON(http.StatusOK, res)
+		res, err := c.Login(login)
+		if err != nil {
+			g.Error(err)
+			return
+		} else {
+			g.JSON(http.StatusOK, res)
+		}
 	}
 }
