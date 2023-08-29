@@ -12,10 +12,14 @@ func (e *ApiError) Error() string {
 	return fmt.Sprintf("message: %s, description: %s, status_code: %d", e.Message, e.Description, e.StatusCode)
 }
 
-func NewApiError(statusCode int, message, description string) *ApiError {
-	return &ApiError{
+func NewApiError(statusCode int, message string, description ...string) *ApiError {
+	apiError := &ApiError{
 		Message:     message,
 		StatusCode:  statusCode,
-		Description: description,
+		Description: "",
 	}
+	if len(description) > 0 {
+		apiError.Description = description[0]
+	}
+	return apiError
 }
