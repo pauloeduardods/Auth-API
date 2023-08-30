@@ -39,6 +39,8 @@ func start() int {
 	host := env.GetStringOrDefault("HOST", "localhost")
 	port := env.GetIntOrDefault("PORT", 4000)
 	cognitoClientId := env.GetStringOrDefault("COGNITO_CLIENT_ID", "")
+	cognitoUserPoolID := env.GetStringOrDefault("COGNITO_USER_POOL_ID", "")
+	cognitoRegion := env.GetStringOrDefault("COGNITO_REGION", "")
 
 	awsConfig, err := config.LoadDefaultConfig(context.Background(),
 		config.WithLogger(createAWSLogAdapter(log)),
@@ -49,11 +51,13 @@ func start() int {
 	}
 
 	s := server.New(server.Options{
-		Log:             log,
-		Host:            host,
-		Port:            port,
-		AwsConfig:       awsConfig,
-		CognitoClientId: cognitoClientId,
+		Log:               log,
+		Host:              host,
+		Port:              port,
+		AwsConfig:         awsConfig,
+		CognitoClientId:   cognitoClientId,
+		CognitoRegion:     cognitoRegion,
+		CognitoUserPoolID: cognitoUserPoolID,
 	})
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)

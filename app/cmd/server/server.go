@@ -11,6 +11,7 @@ import (
 
 	cognito "auth-api-cognito/internal/auth"
 	validatorUtil "auth-api-cognito/internal/utils/validator"
+	cognitoJwtVerify "auth-api-cognito/pkg/cognito-jwt-verify"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/gin-gonic/gin"
@@ -24,16 +25,19 @@ type Server struct {
 	cognito   *cognito.Cognito
 	validator *validatorUtil.Validator
 	server    *http.Server
+	jwtVerify *cognitoJwtVerify.Auth
 	host      string
 	port      int
 }
 
 type Options struct {
-	Log             *zap.Logger
-	AwsConfig       aws.Config
-	CognitoClientId string
-	Port            int
-	Host            string
+	Log               *zap.Logger
+	AwsConfig         aws.Config
+	CognitoClientId   string
+	CognitoRegion     string
+	CognitoUserPoolID string
+	Port              int
+	Host              string
 }
 
 func New(opts Options) *Server {
@@ -52,6 +56,12 @@ func New(opts Options) *Server {
 		Validate: validator.New(),
 	})
 
+	j := cognitoJwtVerify.NewAuth(&cognitoJwtVerify.Config{
+		CognitoRegion:     opts.CognitoRegion,
+		CognitoUserPoolID: opts.CognitoUserPoolID,
+		Log:               opts.Log,
+	})
+
 	return &Server{
 		log:       opts.Log,
 		gin:       g,
@@ -59,6 +69,7 @@ func New(opts Options) *Server {
 		validator: v,
 		host:      opts.Host,
 		port:      opts.Port,
+		jwtVerify: j,
 	}
 }
 
