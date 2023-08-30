@@ -1,7 +1,9 @@
 package cognito
 
 import (
+	"auth-api-cognito/internal/utils"
 	"context"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	cognito "github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
@@ -38,7 +40,21 @@ func (c *Cognito) Login(l LoginInput) (*cognito.InitiateAuthOutput, error) {
 		},
 		ClientId: aws.String(c.clientId),
 	}
-	return c.Client.InitiateAuth(context.TODO(), input)
+	out, err := c.Client.InitiateAuth(context.TODO(), input)
+	if err != nil {
+		errorType := err.Error()
+		if strings.Contains(errorType, "NotAuthorizedException") {
+			return nil, utils.NewApiError(401, "Invalid username or password")
+		}
+		if strings.Contains(errorType, "PasswordResetRequiredException") {
+			return nil, utils.NewApiError(401, "Password reset required")
+		}
+		if strings.Contains(errorType, "UserNotConfirmedException") {
+			return nil, utils.NewApiError(401, "User not confirmed")
+		}
+		return nil, err
+	}
+	return out, nil
 }
 
 type SignUpInput struct {
