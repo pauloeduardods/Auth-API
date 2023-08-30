@@ -25,7 +25,7 @@ func main() {
 func start() int {
 	_ = env.Load(".env")
 
-	logEnv := env.GetStringOrDefault("LOG_ENV", "development")
+	logEnv := env.GetStringOrDefault("APP_ENV", "development")
 	log, err := createLogger(logEnv)
 	if err != nil {
 		fmt.Println("Error setting up the logger:", err)

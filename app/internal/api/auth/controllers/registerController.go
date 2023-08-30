@@ -9,26 +9,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Login(v *validatorUtil.Validator, c *cognito.Cognito) gin.HandlerFunc {
+func Register(v *validatorUtil.Validator, c *cognito.Cognito) gin.HandlerFunc {
 	return func(g *gin.Context) {
-		var login cognito.LoginInput
-		if err := g.ShouldBindJSON(&login); err != nil {
+		var signUp cognito.SignUpInput
+		if err := g.ShouldBindJSON(&signUp); err != nil {
 			g.Error(err)
 			return
 		}
 
-		err := v.Validate(&login)
+		err := v.Validate(&signUp)
 		if err != nil {
 			g.Error(err)
 			return
 		}
 
-		res, err := c.Login(login)
+		res, err := c.SignUp(signUp)
 		if err != nil {
 			g.Error(err)
 			return
 		} else {
-			g.JSON(http.StatusOK, res.AuthenticationResult)
+			g.JSON(http.StatusOK, res)
 		}
 	}
 }

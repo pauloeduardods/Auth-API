@@ -63,11 +63,6 @@ type SignUpInput struct {
 }
 
 func (c *Cognito) SignUp(s SignUpInput) (*cognito.SignUpOutput, error) {
-	// err := c.validator.Struct(s)
-
-	// if err != nil {
-	// 	return nil, err
-	// }
 	input := &cognito.SignUpInput{
 		ClientId: aws.String(c.clientId),
 		Username: aws.String(s.Username),
@@ -81,4 +76,29 @@ func (c *Cognito) UserInformation(accessToken string) (*cognito.GetUserOutput, e
 		AccessToken: aws.String(accessToken),
 	}
 	return c.Client.GetUser(context.TODO(), input)
+}
+
+type ConfirmSignUpInput struct {
+	Username string `json:"username" binding:"required" validate:"email"`
+	Code     string `json:"code" binding:"required"`
+}
+
+func (c *Cognito) ConfirmSignUp(s ConfirmSignUpInput) (*cognito.ConfirmSignUpOutput, error) {
+	input := &cognito.ConfirmSignUpInput{
+		ClientId:         aws.String(c.clientId),
+		Username:         aws.String(s.Username),
+		ConfirmationCode: aws.String(s.Code),
+	}
+	return c.Client.ConfirmSignUp(context.Background(), input)
+}
+
+type GetUserInput struct {
+	AccessToken string `json:"accessToken" binding:"required"`
+}
+
+func (c *Cognito) GetUser(g GetUserInput) (*cognito.GetUserOutput, error) {
+	input := &cognito.GetUserInput{
+		AccessToken: &g.AccessToken,
+	}
+	return c.Client.GetUser(context.Background(), input)
 }
