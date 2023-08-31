@@ -1,4 +1,4 @@
-package controllers
+package handlers
 
 import (
 	"net/http"
@@ -9,21 +9,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Register(v *validatorUtil.Validator, c *cognito.Cognito) gin.HandlerFunc {
+func ConfirmSignUp(v *validatorUtil.Validator, c *cognito.Cognito) gin.HandlerFunc {
 	return func(g *gin.Context) {
-		var signUp cognito.SignUpInput
-		if err := g.ShouldBindJSON(&signUp); err != nil {
+		var confirmSignUp cognito.ConfirmSignUpInput
+		if err := g.ShouldBindJSON(&confirmSignUp); err != nil {
 			g.Error(err)
 			return
 		}
 
-		err := v.Validate(&signUp)
+		err := v.Validate(&confirmSignUp)
 		if err != nil {
 			g.Error(err)
 			return
 		}
 
-		res, err := c.SignUp(signUp)
+		res, err := c.ConfirmSignUp(confirmSignUp)
 		if err != nil {
 			g.Error(err)
 			return

@@ -1,8 +1,8 @@
 package server
 
 import (
-	authRoutes "auth-api-cognito/internal/api/auth/routes"
-	"auth-api-cognito/internal/api/middleware"
+	apiRoutes "auth-api-cognito/internal/api"
+	"auth-api-cognito/internal/middleware"
 	"auth-api-cognito/static"
 
 	"github.com/gin-gonic/gin"
@@ -18,13 +18,20 @@ func (s *Server) SetupCors() {
 	s.gin.Use(cors.Cors())
 }
 
-func (s *Server) SetupMiddleware() {
-	s.gin.Use(middleware.ErrorHandler(s.log))
-	s.gin.Use(gin.Recovery())
+func (s *Server) SetupMiddlewareAndRouteGroup() {
+	s.gin.Use(gin.CustomRecovery(middleware.RecoveryHandler(s.log)))
 	s.gin.Use(gin.Logger())
+	s.gin.Use(middleware.ErrorHandler(s.log))
+	private := s.gin.Group("/api/v1")
+	public := s.gin.Group("/api/v1")
+
+	private.Use(middleware.AuthMiddleware(s.jwtVerify))
+
+	s.privateRoute = private
+	s.publicRoute = public
 }
 
 func (s *Server) SetupRoutes() {
 	static.SetupStaticFiles(s.gin)
-	authRoutes.SetupRoutes(s.gin, s.validator, s.cognito)
+	apiRoutes.SetupRoutes(s.publicRoute, s.privateRoute, s.validator, s.cognito)
 }

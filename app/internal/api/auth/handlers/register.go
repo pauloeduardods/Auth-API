@@ -1,8 +1,7 @@
-package controllers
+package handlers
 
 import (
 	"net/http"
-	"strings"
 
 	cognito "auth-api-cognito/internal/auth"
 	validatorUtil "auth-api-cognito/internal/utils/validator"
@@ -10,20 +9,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetUser(v *validatorUtil.Validator, c *cognito.Cognito) gin.HandlerFunc {
+func Register(v *validatorUtil.Validator, c *cognito.Cognito) gin.HandlerFunc {
 	return func(g *gin.Context) {
-		accessToken := g.GetHeader("Authorization")
-		getUser := cognito.GetUserInput{
-			AccessToken: strings.Split(accessToken, " ")[1],
+		var signUp cognito.SignUpInput
+		if err := g.ShouldBindJSON(&signUp); err != nil {
+			g.Error(err)
+			return
 		}
 
-		err := v.Validate(&getUser)
+		err := v.Validate(&signUp)
 		if err != nil {
 			g.Error(err)
 			return
 		}
 
-		res, err := c.GetUser(getUser)
+		res, err := c.SignUp(signUp)
 		if err != nil {
 			g.Error(err)
 			return

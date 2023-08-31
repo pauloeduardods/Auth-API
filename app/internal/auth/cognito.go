@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	cognito "github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
+	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 )
 
 type Cognito struct {
@@ -60,6 +61,7 @@ func (c *Cognito) Login(l LoginInput) (*cognito.InitiateAuthOutput, error) {
 type SignUpInput struct {
 	Username string `json:"username" binding:"required" validate:"email"`
 	Password string `json:"password" binding:"required" validate:"min=8"`
+	Name     string `json:"name" binding:"required" validate:"min=3,max=50"`
 }
 
 func (c *Cognito) SignUp(s SignUpInput) (*cognito.SignUpOutput, error) {
@@ -67,6 +69,12 @@ func (c *Cognito) SignUp(s SignUpInput) (*cognito.SignUpOutput, error) {
 		ClientId: aws.String(c.clientId),
 		Username: aws.String(s.Username),
 		Password: aws.String(s.Password),
+		UserAttributes: []types.AttributeType{
+			{
+				Name:  aws.String("name"),
+				Value: aws.String(s.Name),
+			},
+		},
 	}
 	return c.Client.SignUp(context.TODO(), input)
 }
@@ -80,7 +88,7 @@ func (c *Cognito) UserInformation(accessToken string) (*cognito.GetUserOutput, e
 
 type ConfirmSignUpInput struct {
 	Username string `json:"username" binding:"required" validate:"email"`
-	Code     string `json:"code" binding:"required"`
+	Code     string `json:"code" binding:"required" validate:"numeric"`
 }
 
 func (c *Cognito) ConfirmSignUp(s ConfirmSignUpInput) (*cognito.ConfirmSignUpOutput, error) {

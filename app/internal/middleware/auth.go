@@ -25,14 +25,14 @@ func AuthMiddleware(j *cognitoJwtVerify.Auth) gin.HandlerFunc {
 
 		jwtToken, err := j.ParseJWT(splitToken[1])
 
-		c.Set("jwtToken", jwtToken)
-		c.Set("user", jwtToken.Claims)
-
 		if err != nil {
 			c.Error(utils.NewApiError(http.StatusUnauthorized, err.Error()))
 			c.Abort()
 			return
 		}
+
+		c.Set("jwtToken", jwtToken)
+		c.Set("user", jwtToken.Claims)
 
 		c.Next()
 	}

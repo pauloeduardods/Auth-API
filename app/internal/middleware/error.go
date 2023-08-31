@@ -28,15 +28,18 @@ func ErrorHandler(log *zap.Logger) gin.HandlerFunc {
 					"message": "Validation Error",
 					"errors":  errMsg,
 				})
+				c.Abort()
 				return
 			default:
 				appEnv := env.GetStringOrDefault("APP_ENV", "development")
 				log.Error("Error", zap.Error(e))
 				if appEnv == "development" {
 					c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"message": e.Error()})
+					c.Abort()
 					return
 				}
 				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"message": "Service Unavailable"})
+				c.Abort()
 			}
 		}
 	}

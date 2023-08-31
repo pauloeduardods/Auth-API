@@ -20,14 +20,16 @@ import (
 )
 
 type Server struct {
-	log       *zap.Logger
-	gin       *gin.Engine
-	cognito   *cognito.Cognito
-	validator *validatorUtil.Validator
-	server    *http.Server
-	jwtVerify *cognitoJwtVerify.Auth
-	host      string
-	port      int
+	log          *zap.Logger
+	gin          *gin.Engine
+	publicRoute  *gin.RouterGroup
+	privateRoute *gin.RouterGroup
+	cognito      *cognito.Cognito
+	validator    *validatorUtil.Validator
+	server       *http.Server
+	jwtVerify    *cognitoJwtVerify.Auth
+	host         string
+	port         int
 }
 
 type Options struct {
@@ -76,7 +78,7 @@ func New(opts Options) *Server {
 func (s *Server) Start() error {
 	s.log.Info("Starting server", zap.Int("port", s.port))
 	s.SetupCors()
-	s.SetupMiddleware()
+	s.SetupMiddlewareAndRouteGroup()
 	s.SetupRoutes()
 
 	quit := make(chan os.Signal)

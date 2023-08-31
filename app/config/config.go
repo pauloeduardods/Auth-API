@@ -15,8 +15,6 @@ type AppConfig struct {
 	AppEnv            string
 }
 
-var release string
-
 func LoadConfig() (*AppConfig, error) {
 	_ = env.Load(".env")
 
