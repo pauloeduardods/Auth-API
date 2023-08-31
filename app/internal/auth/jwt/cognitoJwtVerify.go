@@ -1,4 +1,4 @@
-package cognitoJwtVerify
+package jwt
 
 import (
 	"crypto/rsa"
@@ -85,8 +85,8 @@ func (a *Auth) CacheJWK() error {
 
 func (a *Auth) ParseJWT(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		key := convertKey(a.jwk.Keys[1].E, a.jwk.Keys[1].N)
-		return key, nil
+		key, err := convertKey(a.jwk.Keys[1].E, a.jwk.Keys[1].N)
+		return key, err
 	})
 	if err != nil {
 		a.log.Error("Error parsing JWT", zap.Error(err))
@@ -104,10 +104,10 @@ func (a *Auth) JWKURL() string {
 	return a.jwkURL
 }
 
-func convertKey(rawE, rawN string) *rsa.PublicKey {
+func convertKey(rawE, rawN string) (*rsa.PublicKey, error) {
 	decodedE, err := base64.RawURLEncoding.DecodeString(rawE)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	if len(decodedE) < 4 {
 		ndata := make([]byte, 4)
@@ -120,8 +120,8 @@ func convertKey(rawE, rawN string) *rsa.PublicKey {
 	}
 	decodedN, err := base64.RawURLEncoding.DecodeString(rawN)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	pubKey.N.SetBytes(decodedN)
-	return pubKey
+	return pubKey, nil
 }

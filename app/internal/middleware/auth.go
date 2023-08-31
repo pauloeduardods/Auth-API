@@ -1,15 +1,15 @@
 package middleware
 
 import (
+	"auth-api-cognito/internal/auth/jwt"
 	"auth-api-cognito/internal/utils"
-	cognitoJwtVerify "auth-api-cognito/pkg/cognito-jwt-verify"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware(j *cognitoJwtVerify.Auth) gin.HandlerFunc {
+func AuthMiddleware(j *jwt.Auth) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 
