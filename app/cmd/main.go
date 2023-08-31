@@ -2,6 +2,7 @@ package main
 
 import (
 	"auth-api-cognito/cmd/server"
+	aConfig "auth-api-cognito/config"
 	"context"
 	"fmt"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/smithy-go/logging"
-	"github.com/maragudk/env"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
@@ -23,10 +23,13 @@ func main() {
 }
 
 func start() int {
-	_ = env.Load(".env")
+	appConfig, err := aConfig.LoadConfig()
+	if err != nil {
+		fmt.Println("Error loading config:", err)
+		return 1
+	}
 
-	logEnv := env.GetStringOrDefault("APP_ENV", "development")
-	log, err := createLogger(logEnv)
+	log, err := createLogger(appConfig.AppEnv)
 	if err != nil {
 		fmt.Println("Error setting up the logger:", err)
 		return 1
@@ -35,12 +38,6 @@ func start() int {
 	defer func() {
 		_ = log.Sync()
 	}()
-
-	host := env.GetStringOrDefault("HOST", "localhost")
-	port := env.GetIntOrDefault("PORT", 4000)
-	cognitoClientId := env.GetStringOrDefault("COGNITO_CLIENT_ID", "")
-	cognitoUserPoolID := env.GetStringOrDefault("COGNITO_USER_POOL_ID", "")
-	cognitoRegion := env.GetStringOrDefault("COGNITO_REGION", "")
 
 	awsConfig, err := config.LoadDefaultConfig(context.Background(),
 		config.WithLogger(createAWSLogAdapter(log)),
@@ -52,12 +49,12 @@ func start() int {
 
 	s := server.New(server.Options{
 		Log:               log,
-		Host:              host,
-		Port:              port,
 		AwsConfig:         awsConfig,
-		CognitoClientId:   cognitoClientId,
-		CognitoRegion:     cognitoRegion,
-		CognitoUserPoolID: cognitoUserPoolID,
+		Host:              appConfig.Host,
+		Port:              appConfig.Port,
+		CognitoClientId:   appConfig.CognitoClientId,
+		CognitoRegion:     appConfig.CognitoRegion,
+		CognitoUserPoolID: appConfig.CognitoUserPoolID,
 	})
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
