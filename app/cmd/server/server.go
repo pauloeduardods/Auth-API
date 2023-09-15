@@ -1,6 +1,8 @@
 package server
 
 import (
+	"auth-api-cognito/internal/utils"
+	"auth-api-cognito/pkg/jwtToken"
 	"context"
 	"net/http"
 	"os"
@@ -9,27 +11,23 @@ import (
 	"syscall"
 	"time"
 
-	cognito "auth-api-cognito/internal/auth"
-	"auth-api-cognito/internal/auth/jwt"
-	validatorUtil "auth-api-cognito/internal/utils/validator"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
+	cognito "github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
 
 type Server struct {
-	log          *zap.Logger
-	gin          *gin.Engine
-	publicRoute  *gin.RouterGroup
-	privateRoute *gin.RouterGroup
-	cognito      *cognito.Cognito
-	validator    *validatorUtil.Validator
-	server       *http.Server
-	jwtVerify    *jwt.Auth
-	host         string
-	port         int
+	log             *zap.Logger
+	gin             *gin.Engine
+	cognitoClient   *cognito.Client
+	utils           *utils.Utils
+	server          *http.Server
+	jwtToken        *jwtToken.JwtToken
+	host            string
+	port            int
+	cognitoClientId string
 }
 
 type Options struct {
@@ -50,36 +48,35 @@ func New(opts Options) *Server {
 	g := gin.Default()
 
 	c := cognito.New(cognito.Options{
-		AWSConfig: opts.AwsConfig,
-		ClientId:  opts.CognitoClientId,
+		Credentials: opts.AwsConfig.Credentials,
+		Region:      opts.AwsConfig.Region,
 	})
 
-	v := validatorUtil.New(validatorUtil.Options{
-		Validate: validator.New(),
-	})
+	u := utils.NewUtils(validator.New())
 
-	j := jwt.NewAuth(&jwt.Config{
+	j := jwtToken.NewAuth(&jwtToken.Config{
 		CognitoRegion:     opts.CognitoRegion,
 		CognitoUserPoolID: opts.CognitoUserPoolID,
 		Log:               opts.Log,
 	})
 
 	return &Server{
-		log:       opts.Log,
-		gin:       g,
-		cognito:   c,
-		validator: v,
-		host:      opts.Host,
-		port:      opts.Port,
-		jwtVerify: j,
+		log:             opts.Log,
+		gin:             g,
+		cognitoClient:   c,
+		host:            opts.Host,
+		port:            opts.Port,
+		jwtToken:        j,
+		utils:           u,
+		cognitoClientId: opts.CognitoClientId,
 	}
 }
 
 func (s *Server) Start() error {
 	s.log.Info("Starting server", zap.Int("port", s.port))
 	s.SetupCors()
-	s.SetupMiddlewareAndRouteGroup()
-	s.SetupRoutes()
+	s.SetupMiddlewares()
+	s.SetupApi()
 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

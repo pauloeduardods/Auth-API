@@ -1,8 +1,10 @@
 package server
 
 import (
-	apiRoutes "auth-api-cognito/internal/api"
-	"auth-api-cognito/internal/middleware"
+	"auth-api-cognito/api/handlers"
+	"auth-api-cognito/api/middleware"
+	"auth-api-cognito/api/routes"
+	userService "auth-api-cognito/internal/domain/user/service"
 	"auth-api-cognito/static"
 
 	"github.com/gin-gonic/gin"
@@ -15,23 +17,32 @@ func (s *Server) SetupCors() {
 		Headers:     "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization, X-CSRF-Token, X-Auth-Token, X-Requested-With",
 		Credentials: false,
 	}
-	s.gin.Use(cors.Cors())
+	s.gin.Use(cors.CorsMiddleware())
 }
 
-func (s *Server) SetupMiddlewareAndRouteGroup() {
+func (s *Server) SetupMiddlewares() {
 	s.gin.Use(gin.CustomRecovery(middleware.RecoveryHandler(s.log)))
 	s.gin.Use(gin.Logger())
 	s.gin.Use(middleware.ErrorHandler(s.log))
-	private := s.gin.Group("/api/v1")
-	public := s.gin.Group("/api/v1")
 
-	private.Use(middleware.AuthMiddleware(s.jwtVerify))
-
-	s.privateRoute = private
-	s.publicRoute = public
 }
 
-func (s *Server) SetupRoutes() {
+func (s *Server) SetupApi() {
 	static.SetupStaticFiles(s.gin)
-	apiRoutes.SetupRoutes(s.publicRoute, s.privateRoute, s.validator, s.cognito)
+
+	//Services
+
+	authService := userService.NewAuthService(s.cognitoClient, s.cognitoClientId)
+
+	//Handlers
+
+	authHandler := handlers.NewAuthHandler(authService, s.utils)
+
+	//Middlewares
+
+	authMiddleware := middleware.NewAuthMiddleware(s.jwtToken)
+
+	//Routes
+	routes.ConfigAuthRoutes(s.gin, authMiddleware, authHandler)
+
 }

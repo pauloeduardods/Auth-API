@@ -1,4 +1,4 @@
-package cognito
+package service
 
 import (
 	"auth-api-cognito/internal/utils"
@@ -10,21 +10,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 )
 
-type Cognito struct {
+type AuthService struct {
 	Client   *cognito.Client
 	clientId string
 }
 
-type Options struct {
-	AWSConfig aws.Config
-	ClientId  string
-}
-
-func New(opts Options) *Cognito {
-	return &Cognito{
-		Client:   cognito.NewFromConfig(opts.AWSConfig),
-		clientId: opts.ClientId,
-	}
+type IAuthService interface {
+	Login(l LoginInput) (*cognito.InitiateAuthOutput, error)
+	SignUp(s SignUpInput) (*cognito.SignUpOutput, error)
+	UserInformation(accessToken string) (*cognito.GetUserOutput, error)
+	ConfirmSignUp(s ConfirmSignUpInput) (*cognito.ConfirmSignUpOutput, error)
+	GetUser(g GetUserInput) (*cognito.GetUserOutput, error)
 }
 
 type LoginInput struct {
@@ -32,7 +28,29 @@ type LoginInput struct {
 	Password string `json:"password" binding:"required" validate:"min=8"`
 }
 
-func (c *Cognito) Login(l LoginInput) (*cognito.InitiateAuthOutput, error) {
+type SignUpInput struct {
+	Username string `json:"username" binding:"required" validate:"email"`
+	Password string `json:"password" binding:"required" validate:"min=8"`
+	Name     string `json:"name" binding:"required" validate:"min=3,max=50"`
+}
+
+type ConfirmSignUpInput struct {
+	Username string `json:"username" binding:"required" validate:"email"`
+	Code     string `json:"code" binding:"required" validate:"numeric"`
+}
+
+type GetUserInput struct {
+	AccessToken string `json:"accessToken" binding:"required"`
+}
+
+func NewAuthService(c *cognito.Client, clientId string) *AuthService {
+	return &AuthService{
+		Client:   c,
+		clientId: clientId,
+	}
+}
+
+func (c *AuthService) Login(l LoginInput) (*cognito.InitiateAuthOutput, error) {
 	input := &cognito.InitiateAuthInput{
 		AuthFlow: "USER_PASSWORD_AUTH",
 		AuthParameters: map[string]string{
@@ -58,13 +76,7 @@ func (c *Cognito) Login(l LoginInput) (*cognito.InitiateAuthOutput, error) {
 	return out, nil
 }
 
-type SignUpInput struct {
-	Username string `json:"username" binding:"required" validate:"email"`
-	Password string `json:"password" binding:"required" validate:"min=8"`
-	Name     string `json:"name" binding:"required" validate:"min=3,max=50"`
-}
-
-func (c *Cognito) SignUp(s SignUpInput) (*cognito.SignUpOutput, error) {
+func (c *AuthService) SignUp(s SignUpInput) (*cognito.SignUpOutput, error) {
 	input := &cognito.SignUpInput{
 		ClientId: aws.String(c.clientId),
 		Username: aws.String(s.Username),
@@ -79,19 +91,14 @@ func (c *Cognito) SignUp(s SignUpInput) (*cognito.SignUpOutput, error) {
 	return c.Client.SignUp(context.TODO(), input)
 }
 
-func (c *Cognito) UserInformation(accessToken string) (*cognito.GetUserOutput, error) {
+func (c *AuthService) UserInformation(accessToken string) (*cognito.GetUserOutput, error) {
 	input := &cognito.GetUserInput{
 		AccessToken: aws.String(accessToken),
 	}
 	return c.Client.GetUser(context.TODO(), input)
 }
 
-type ConfirmSignUpInput struct {
-	Username string `json:"username" binding:"required" validate:"email"`
-	Code     string `json:"code" binding:"required" validate:"numeric"`
-}
-
-func (c *Cognito) ConfirmSignUp(s ConfirmSignUpInput) (*cognito.ConfirmSignUpOutput, error) {
+func (c *AuthService) ConfirmSignUp(s ConfirmSignUpInput) (*cognito.ConfirmSignUpOutput, error) {
 	input := &cognito.ConfirmSignUpInput{
 		ClientId:         aws.String(c.clientId),
 		Username:         aws.String(s.Username),
@@ -100,11 +107,7 @@ func (c *Cognito) ConfirmSignUp(s ConfirmSignUpInput) (*cognito.ConfirmSignUpOut
 	return c.Client.ConfirmSignUp(context.Background(), input)
 }
 
-type GetUserInput struct {
-	AccessToken string `json:"accessToken" binding:"required"`
-}
-
-func (c *Cognito) GetUser(g GetUserInput) (*cognito.GetUserOutput, error) {
+func (c *AuthService) GetUser(g GetUserInput) (*cognito.GetUserOutput, error) {
 	input := &cognito.GetUserInput{
 		AccessToken: &g.AccessToken,
 	}

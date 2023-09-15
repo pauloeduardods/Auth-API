@@ -1,4 +1,4 @@
-package jwt
+package jwtToken
 
 import (
 	"crypto/rsa"
@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Auth struct {
+type JwtToken struct {
 	jwk               *JWK
 	jwkURL            string
 	cognitoRegion     string
@@ -38,8 +38,8 @@ type JWK struct {
 	} `json:"keys"`
 }
 
-func NewAuth(config *Config) *Auth {
-	a := &Auth{
+func NewAuth(config *Config) *JwtToken {
+	a := &JwtToken{
 		cognitoRegion:     config.CognitoRegion,
 		cognitoUserPoolID: config.CognitoUserPoolID,
 		log:               config.Log,
@@ -50,7 +50,7 @@ func NewAuth(config *Config) *Auth {
 	return a
 }
 
-func (a *Auth) CacheJWK() error {
+func (a *JwtToken) CacheJWK() error {
 	req, err := http.NewRequest("GET", a.jwkURL, nil)
 	if err != nil {
 		a.log.Error("Error creating JWK request", zap.Error(err))
@@ -83,7 +83,7 @@ func (a *Auth) CacheJWK() error {
 	return nil
 }
 
-func (a *Auth) ParseJWT(tokenString string) (*jwt.Token, error) {
+func (a *JwtToken) ParseJWT(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		key, err := convertKey(a.jwk.Keys[1].E, a.jwk.Keys[1].N)
 		return key, err
@@ -96,11 +96,11 @@ func (a *Auth) ParseJWT(tokenString string) (*jwt.Token, error) {
 	return token, nil
 }
 
-func (a *Auth) JWK() *JWK {
+func (a *JwtToken) JWK() *JWK {
 	return a.jwk
 }
 
-func (a *Auth) JWKURL() string {
+func (a *JwtToken) JWKURL() string {
 	return a.jwkURL
 }
 
