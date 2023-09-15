@@ -8,12 +8,8 @@ type Utils struct {
 	validate *validator.Validate
 }
 
-type UtilsOptions struct {
-	Validate *validator.Validate
-}
-
-func NewUtils(opts UtilsOptions) *Utils {
+func NewUtils(v *validator.Validate) *Utils {
 	return &Utils{
-		validate: opts.Validate,
+		validate: v,
 	}
 }

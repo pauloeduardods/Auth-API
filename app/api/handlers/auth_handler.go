@@ -1,31 +1,36 @@
-package handler
+package handlers
 
 import (
+	userServices "auth-api-cognito/internal/domain/user/service"
+	"auth-api-cognito/internal/utils"
 	"net/http"
 	"strings"
-
-	services "auth-api-cognito/internal/domain/service"
-	cognitoService "auth-api-cognito/internal/domain/service/cognito"
-	"auth-api-cognito/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-type AuthHandler struct {
-	services *services.Services
-	utils    *utils.Utils
+type IAuthHandler interface {
+	ConfirmSignUp() gin.HandlerFunc
+	GetUser() gin.HandlerFunc
+	Login() gin.HandlerFunc
+	Register() gin.HandlerFunc
 }
 
-func NewAuthHandler(s *services.Services, u *utils.Utils) *AuthHandler {
+type AuthHandler struct {
+	authService userServices.IAuthService
+	utils       *utils.Utils
+}
+
+func NewAuthHandler(s userServices.IAuthService, u *utils.Utils) IAuthHandler {
 	return &AuthHandler{
-		services: s,
-		utils:    u,
+		authService: s,
+		utils:       u,
 	}
 }
 
 func (a *AuthHandler) ConfirmSignUp() gin.HandlerFunc {
 	return func(g *gin.Context) {
-		var confirmSignUp cognitoService.ConfirmSignUpInput
+		var confirmSignUp userServices.ConfirmSignUpInput
 		if err := g.ShouldBindJSON(&confirmSignUp); err != nil {
 			g.Error(err)
 			return
@@ -37,7 +42,7 @@ func (a *AuthHandler) ConfirmSignUp() gin.HandlerFunc {
 			return
 		}
 
-		res, err := a.services.Cognito.ConfirmSignUp(confirmSignUp)
+		res, err := a.authService.ConfirmSignUp(confirmSignUp)
 		if err != nil {
 			g.Error(err)
 			return
@@ -50,7 +55,7 @@ func (a *AuthHandler) ConfirmSignUp() gin.HandlerFunc {
 func (a *AuthHandler) GetUser() gin.HandlerFunc {
 	return func(g *gin.Context) {
 		accessToken := g.GetHeader("Authorization")
-		getUser := cognitoService.GetUserInput{
+		getUser := userServices.GetUserInput{
 			AccessToken: strings.Split(accessToken, " ")[1],
 		}
 
@@ -60,7 +65,7 @@ func (a *AuthHandler) GetUser() gin.HandlerFunc {
 			return
 		}
 
-		res, err := a.services.Cognito.GetUser(getUser)
+		res, err := a.authService.GetUser(getUser)
 		if err != nil {
 			g.Error(err)
 			return
@@ -72,7 +77,7 @@ func (a *AuthHandler) GetUser() gin.HandlerFunc {
 
 func (a *AuthHandler) Login() gin.HandlerFunc {
 	return func(g *gin.Context) {
-		var login cognitoService.LoginInput
+		var login userServices.LoginInput
 		if err := g.ShouldBindJSON(&login); err != nil {
 			g.Error(err)
 			return
@@ -84,7 +89,7 @@ func (a *AuthHandler) Login() gin.HandlerFunc {
 			return
 		}
 
-		res, err := a.services.Cognito.Login(login)
+		res, err := a.authService.Login(login)
 		if err != nil {
 			g.Error(err)
 			return
@@ -96,7 +101,7 @@ func (a *AuthHandler) Login() gin.HandlerFunc {
 
 func (a *AuthHandler) Register() gin.HandlerFunc {
 	return func(g *gin.Context) {
-		var signUp cognitoService.SignUpInput
+		var signUp userServices.SignUpInput
 		if err := g.ShouldBindJSON(&signUp); err != nil {
 			g.Error(err)
 			return
@@ -108,7 +113,7 @@ func (a *AuthHandler) Register() gin.HandlerFunc {
 			return
 		}
 
-		res, err := a.services.Cognito.SignUp(signUp)
+		res, err := a.authService.SignUp(signUp)
 		if err != nil {
 			g.Error(err)
 			return
