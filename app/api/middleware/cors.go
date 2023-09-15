@@ -13,7 +13,7 @@ type Cors struct {
 	Credentials bool
 }
 
-func (co *Cors) Cors() gin.HandlerFunc {
+func (co *Cors) CorsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", co.Origin)
 		c.Writer.Header().Set("Access-Control-Allow-Methods", co.Methods)

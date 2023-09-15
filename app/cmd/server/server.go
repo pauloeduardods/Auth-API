@@ -11,7 +11,7 @@ import (
 
 	cognito "auth-api-cognito/internal/auth"
 	"auth-api-cognito/internal/auth/jwt"
-	validatorUtil "auth-api-cognito/internal/utils/validator"
+	validatorUtils "auth-api-cognito/internal/utils/validator"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,7 @@ type Server struct {
 	publicRoute  *gin.RouterGroup
 	privateRoute *gin.RouterGroup
 	cognito      *cognito.Cognito
-	validator    *validatorUtil.Validator
+	validator    *validatorUtils.Validator
 	server       *http.Server
 	jwtVerify    *jwt.Auth
 	host         string
@@ -54,7 +54,7 @@ func New(opts Options) *Server {
 		ClientId:  opts.CognitoClientId,
 	})
 
-	v := validatorUtil.New(validatorUtil.Options{
+	v := validatorUtils.New(validatorUtils.Options{
 		Validate: validator.New(),
 	})
 

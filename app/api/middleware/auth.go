@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"auth-api-cognito/internal/auth/jwt"
 	"auth-api-cognito/internal/utils"
 	"net/http"
 	"strings"
@@ -9,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware(j *jwt.Auth) gin.HandlerFunc {
+func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 
@@ -21,9 +20,9 @@ func AuthMiddleware(j *jwt.Auth) gin.HandlerFunc {
 
 		splitToken := strings.Split(token, " ")
 
-		j.CacheJWK()
+		m.JwtToken.CacheJWK()
 
-		jwtToken, err := j.ParseJWT(splitToken[1])
+		jwtToken, err := m.JwtToken.ParseJWT(splitToken[1])
 
 		if err != nil {
 			c.Error(utils.NewApiError(http.StatusUnauthorized, err.Error()))
